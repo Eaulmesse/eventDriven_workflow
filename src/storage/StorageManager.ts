@@ -31,13 +31,34 @@ export class StorageManager {
             throw error;
         }
     }
-        
+
+    async initialize(): Promise<void> {
+        try {
+            const data = await chrome.storage.local.get(['workflows', 'actions', 'integrations', 'logs']);
+            this.workflows = Array.isArray(data['workflows']) ? data['workflows'] : [];
+            this.actions = Array.isArray(data['actions']) ? data['actions'] : [];
+            this.integrations = Array.isArray(data['integrations']) ? data['integrations'] : [];
+            this.logs = Array.isArray(data['logs']) ? data['logs'] : [];
+        } catch (error) {
+            console.error('Error initializing StorageManager:', error);
+            throw error;
+        }
+    }
 
     async set<T>(collection: CollectionName, id: string, item: T ): Promise<void> {
         try {
+
+            if (!id || id.trim() === '') {
+                throw new Error('ID is required');
+            }
+
+            if (!item || typeof item !== 'object') {
+                throw new Error('Item must be an object');
+            }
+
             const data = await chrome.storage.local.get(collection);
             const items = data[collection] || {};
-            
+
             items[id] = item;
         
             await chrome.storage.local.set({ [collection]: items });
@@ -49,6 +70,11 @@ export class StorageManager {
 
     async get<T>(collection: CollectionName, id: string): Promise<T | undefined> {
         try {
+
+            if (!id || id.trim() === '') {
+                throw new Error('ID is required');
+            }
+
             const data = await chrome.storage.local.get(collection);
             const items = (data[collection] || {}) as Record<string, T>
 
@@ -146,6 +172,21 @@ export class StorageManager {
         } catch (error) {
             console.error('Error finding item in StorageManager:', error);
             return undefined;
+        }
+    }
+
+    async filter<T>(collection: CollectionName, predicate: (item: T) => boolean): Promise<T[]> {
+        try {
+            const data = await chrome.storage.local.get(collection);
+            const items = data[collection] as Record<string, T>;
+            if (!items) {
+                return [];
+            }
+
+            return items ? Object.values(items).filter(predicate) : [];
+        } catch (error) {
+            console.error('Error filtering items in StorageManager:', error);
+            return [];
         }
     }
 
