@@ -21,6 +21,12 @@ export class Router {
       case WORKFLOW_ENDPOINTS.CREATE:
         return this.workflowHandler.handleCreate((payload as { name: string }) ?? { name: '' });
 
+      case WORKFLOW_ENDPOINTS.UPDATE:
+        return this.workflowHandler.handleUpdate((payload as { id: string; name: string }) ?? { id: '', name: '' });
+
+      case WORKFLOW_ENDPOINTS.DELETE:
+        return this.workflowHandler.handleDelete((payload as { id: string }) ?? { id: '' });
+
       default:
         return { success: false, error: `Endpoint inconnu: ${endpoint}` };
     }

@@ -61,7 +61,69 @@ export class WorkflowHandler {
       };
     }
   }
+
+  async handleUpdate(payload: { id: string; name: string }): Promise<MessageResponse<{ id: string; name: string }>> {
+    try {
+      if (!payload?.id?.trim()) {
+        return { success: false, error: 'id manquant' };
+      }
+      if (!payload?.name?.trim()) {
+        return { success: false, error: 'Nom manquant' };
+      }
+
+      const storageManager = StorageManager.getInstance();
+      const workflow = await storageManager.get<Workflow>('workflows', payload.id);
+
+      if (!workflow) {
+        return { success: false, error: 'Workflow non trouvé' };
+      }
+
+      workflow.name = payload.name;
+      workflow.updatedAt = new Date();
+      await storageManager.update('workflows', payload.id, workflow);
+
+      return { success: true, data: { id: workflow.id, name: workflow.name } };
+
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
+    }
+  }
+
+  async handleDelete(payload: { id: string }): Promise<MessageResponse<{ id: string }>> {
+    try {
+      if (!payload?.id?.trim()) {
+        return { success: false, error: 'id manquant' };
+      }
+
+      const storageManager = StorageManager.getInstance();
+      await storageManager.deleteWorkflow(payload.id);
+
+      return { success: true, data: { id: payload.id } };
+
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
+    }
+  }
+
+  async handleExecute(payload: { id: string }): Promise<MessageResponse<{ id: string }>> {
+    try {
+      if (!payload?.id?.trim()) {
+        return { success: false, error: 'id manquant' };
+      }
+      const storageManager = StorageManager.getInstance();
+      const workflow = await storageManager.get<Workflow>('workflows', payload.id);
+      if (!workflow) {
+        return { success: false, error: 'Workflow non trouvé' };
+      }
+      return { success: true, data: { id: workflow.id } };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
+    }
+  }
+
 }
+
+  
 
 function uuidv4(): string {
   return crypto.randomUUID();
